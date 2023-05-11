@@ -1021,7 +1021,13 @@ rm -rvf "%{buildroot}$(dirname '%{sysbundle}')"
 
 # ~~ documentation and examples ~~
 
-install -D -t '%{buildroot}%{_pkgdocdir}' -m 0644 -p AUTHORS *.md
+install -D -t '%{buildroot}%{_pkgdocdir}' -m 0644 -p \
+    AUTHORS \
+    CONCEPTS.md \
+    MAINTAINERS.md \
+    README.md \
+    SECURITY.md \
+    TROUBLESHOOTING.md
 cp -rvp doc examples '%{buildroot}%{_pkgdocdir}'
 
 
@@ -1545,7 +1551,17 @@ fi
 
 %files doc
 %license LICENSE NOTICE.txt
-%{_pkgdocdir}
+
+%doc %{_pkgdocdir}/AUTHORS
+%doc %{_pkgdocdir}/CONCEPTS.md
+%doc %{_pkgdocdir}/MAINTAINERS.md
+%doc %{_pkgdocdir}/README.md
+%doc %{_pkgdocdir}/SECURITY.md
+%doc %{_pkgdocdir}/TROUBLESHOOTING.md
+
+%doc %{_pkgdocdir}/doc/
+%doc %{_pkgdocdir}/examples/
+
 
 
 %files cpp
