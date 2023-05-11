@@ -1540,11 +1540,11 @@ fi
 
 %files
 %license LICENSE NOTICE.txt LICENSE-utf8_range
-%{_libdir}/libaddress_sorting.so.%{c_so_version}*
-%{_libdir}/libgpr.so.%{c_so_version}*
-%{_libdir}/libgrpc.so.%{c_so_version}*
-%{_libdir}/libgrpc_unsecure.so.%{c_so_version}*
-%{_libdir}/libupb.so.%{c_so_version}*
+%{_libdir}/libaddress_sorting.so.%{c_so_version}{,.*}
+%{_libdir}/libgpr.so.%{c_so_version}{,.*}
+%{_libdir}/libgrpc.so.%{c_so_version}{,.*}
+%{_libdir}/libgrpc_unsecure.so.%{c_so_version}{,.*}
+%{_libdir}/libupb.so.%{c_so_version}{,.*}
 
 
 %files data
@@ -1569,14 +1569,14 @@ fi
 
 
 %files cpp
-%{_libdir}/libgrpc++.so.%{cpp_so_version}*
-%{_libdir}/libgrpc++_alts.so.%{cpp_so_version}*
-%{_libdir}/libgrpc++_error_details.so.%{cpp_so_version}*
-%{_libdir}/libgrpc++_reflection.so.%{cpp_so_version}*
-%{_libdir}/libgrpc++_unsecure.so.%{cpp_so_version}*
-%{_libdir}/libgrpc_plugin_support.so.%{cpp_so_version}*
+%{_libdir}/libgrpc++.so.%{cpp_so_version}{,.*}
+%{_libdir}/libgrpc++_alts.so.%{cpp_so_version}{,.*}
+%{_libdir}/libgrpc++_error_details.so.%{cpp_so_version}{,.*}
+%{_libdir}/libgrpc++_reflection.so.%{cpp_so_version}{,.*}
+%{_libdir}/libgrpc++_unsecure.so.%{cpp_so_version}{,.*}
+%{_libdir}/libgrpc_plugin_support.so.%{cpp_so_version}{,.*}
 
-%{_libdir}/libgrpcpp_channelz.so.%{cpp_so_version}*
+%{_libdir}/libgrpcpp_channelz.so.%{cpp_so_version}{,.*}
 
 
 %if %{with core_tests}
