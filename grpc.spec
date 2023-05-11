@@ -62,14 +62,6 @@
 
 # =====
 
-# Bootstrapping breaks the circular dependency on python3dist(xds-protos),
-# which is packaged separately but ultimately generated from grpc sources using
-# the proto compilers in this package; the consequence is that we cannot build
-# the python3-grpcio-admin or python3-grpcio-csds subpackages until after
-# bootstrapping.
-# NOTE: these are always disabled in RHEL builds to avoid the xds-protos dep.
-%bcond_with bootstrap
-
 # This must be enabled to get grpc_cli, which is apparently considered part of
 # the tests by upstream. This is mentioned in
 # https://github.com/grpc/grpc/issues/23432.
@@ -284,11 +276,6 @@ BuildRequires:  python3dist(protobuf) >= 3.12.0
 
 # grpcio_status (src/python/grpcio_status/setup.py) install_requires:
 BuildRequires:  python3dist(googleapis-common-protos) >= 1.5.5
-
-%if %{without bootstrap} && %{undefined rhel}
-# grpcio_csds (src/python/grpcio_csds/setup.py) install_requires
-BuildRequires:  python3dist(xds-protos) >= 0.0.7
-%endif
 
 # Several packages have dependencies on grpcio or grpcio_tools—and grpcio-tests
 # depends on all of the other Python packages—which are satisfied within this
@@ -589,6 +576,19 @@ Requires:       grpc-data = %{version}-%{release}
 Provides:       bundled(upb)
 Provides:       bundled(utf8_range)
 
+# We no longer package these because they require python3dist(xds-protos),
+# which has some issues:
+#   - It provides files that overlap with several other packages, including
+#     python-googleapis-common-protos, python-opencensus-proto, and
+#     python-opentelemetry
+#   - The PyPI release is not updated regularly, and version skew only makes
+#     the above-mentioned problem of overlapping files worse.
+#   - The “validate” package conflicts with one belonging to python-configobj
+#     (in F38+), and it is the latter package that owns
+#     https://pypi.org/project/validate/.
+Obsoletes:      python3-grpcio-admin < 1.48.4-7
+Obsoletes:      python3-grpcio-csds < 1.48.4-7
+
 %description -n python3-grpcio
 Python language bindings for gRPC (HTTP/2-based RPC framework).
 
@@ -606,60 +606,6 @@ Provides:       bundled(utf8_range)
 
 %description -n python3-grpcio-tools
 Package for gRPC Python tools.
-
-
-%if %{without bootstrap} && %{undefined rhel}
-%package -n python3-grpcio-admin
-Summary:        A collection of admin services
-License:        Apache-2.0
-BuildArch:      noarch
-
-%description -n python3-grpcio-admin
-gRPC Python Admin Interface Package
-===================================
-
-Debugging gRPC library can be a complex task. There are many configurations and
-internal states, which will affect the behavior of the library. This Python
-package will be the collection of admin services that are exposing debug
-information. Currently, it includes:
-
-* Channel tracing metrics (grpcio-channelz)
-* Client Status Discovery Service (grpcio-csds)
-
-Here is a snippet to create an admin server on "localhost:50051":
-
-    server = grpc.server(ThreadPoolExecutor())
-    port = server.add_insecure_port('localhost:50051')
-    grpc_admin.add_admin_servicers(self._server)
-    server.start()
-
-Welcome to explore the admin services with CLI tool "grpcdebug":
-https://github.com/grpc-ecosystem/grpcdebug.
-
-For any issues or suggestions, please send to
-https://github.com/grpc/grpc/issues.
-%endif
-
-
-%if %{without bootstrap} && %{undefined rhel}
-%package -n python3-grpcio-csds
-Summary:        xDS configuration dump library
-License:        Apache-2.0
-BuildArch:      noarch
-
-%description -n python3-grpcio-csds
-gRPC Python Client Status Discovery Service package
-===================================================
-
-CSDS is part of the Envoy xDS protocol:
-https://www.envoyproxy.io/docs/envoy/latest/api-v3/service/status/v3/csds.proto.
-It allows the gRPC application to programmatically expose the received traffic
-configuration (xDS resources). Welcome to explore with CLI tool "grpcdebug":
-https://github.com/grpc-ecosystem/grpcdebug.
-
-For any issues or suggestions, please send to
-https://github.com/grpc/grpc/issues.
-%endif
 
 
 %package -n python3-grpcio-channelz
@@ -973,8 +919,7 @@ find . -type f -name protoc.py -execdir sed -r -i '1{/^#!/d}' '{}' '+'
 popd >/dev/null
 
 echo '===== Building pure-Python packages =====' 1>&2
-for suffix in channelz %{?!with_bootstrap:%{?!rhel:csds admin}} health_checking \
-    reflection status testing tests
+for suffix in channelz health_checking reflection status testing tests
 do
   echo "----> grpcio_${suffix} <----" 1>&2
   pushd "src/python/grpcio_${suffix}/" >/dev/null
@@ -1044,8 +989,7 @@ pushd "tools/distrib/python/grpcio_tools/" >/dev/null
 popd >/dev/null
 
 # ~~ pure-python modules grpcio-* ~~
-for suffix in channelz %{?!with_bootstrap:%{?!rhel:csds admin}} health_checking \
-    reflection status testing
+for suffix in channelz health_checking reflection status testing
 do
   pushd "src/python/grpcio_${suffix}/" >/dev/null
   %py3_install
@@ -1669,23 +1613,9 @@ fi
 %{python3_sitearch}/grpcio_tools-%{pyversion}-py%{python3_version}.egg-info
 
 
-%if %{without bootstrap} && %{undefined rhel}
-%files -n python3-grpcio-admin
-%{python3_sitelib}/grpc_admin
-%{python3_sitelib}/grpcio_admin-%{pyversion}-py%{python3_version}.egg-info
-%endif
-
-
 %files -n python3-grpcio-channelz
 %{python3_sitelib}/grpc_channelz
 %{python3_sitelib}/grpcio_channelz-%{pyversion}-py%{python3_version}.egg-info
-
-
-%if %{without bootstrap} && %{undefined rhel}
-%files -n python3-grpcio-csds
-%{python3_sitelib}/grpc_csds
-%{python3_sitelib}/grpcio_csds-%{pyversion}-py%{python3_version}.egg-info
-%endif
 
 
 %files -n python3-grpcio-health-checking
