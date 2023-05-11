@@ -591,6 +591,9 @@ Provides:       bundled(utf8_range)
 Obsoletes:      python3-grpcio-admin < 1.48.4-7
 Obsoletes:      python3-grpcio-csds < 1.48.4-7
 
+# https://docs.fedoraproject.org/en-US/packaging-guidelines/Python/#_provides_for_importable_modules
+%py_provides python3-grpc
+
 %description -n python3-grpcio
 Python language bindings for gRPC (HTTP/2-based RPC framework).
 
@@ -606,6 +609,9 @@ Summary:       Package for gRPC Python tools
 Provides:       bundled(upb)
 Provides:       bundled(utf8_range)
 
+# https://docs.fedoraproject.org/en-US/packaging-guidelines/Python/#_provides_for_importable_modules
+%py_provides python3-grpc-tools
+
 %description -n python3-grpcio-tools
 Package for gRPC Python tools.
 
@@ -613,7 +619,11 @@ Package for gRPC Python tools.
 %package -n python3-grpcio-channelz
 Summary:        Channel Level Live Debug Information Service for gRPC
 License:        Apache-2.0
+
 BuildArch:      noarch
+
+# https://docs.fedoraproject.org/en-US/packaging-guidelines/Python/#_provides_for_importable_modules
+%py_provides python3-grpc-channelz
 
 %description -n python3-grpcio-channelz
 gRPC Python Channelz package
@@ -625,7 +635,11 @@ Channelz is a live debug tool in gRPC Python.
 %package -n python3-grpcio-health-checking
 Summary:        Standard Health Checking Service for gRPC
 License:        Apache-2.0
+
 BuildArch:      noarch
+
+# https://docs.fedoraproject.org/en-US/packaging-guidelines/Python/#_provides_for_importable_modules
+%py_provides python3-grpc-health
 
 %description -n python3-grpcio-health-checking
 gRPC Python Health Checking
@@ -637,7 +651,11 @@ Reference package for GRPC Python health checking.
 %package -n python3-grpcio-reflection
 Summary:        Standard Protobuf Reflection Service for gRPC
 License:        Apache-2.0
+
 BuildArch:      noarch
+
+# https://docs.fedoraproject.org/en-US/packaging-guidelines/Python/#_provides_for_importable_modules
+%py_provides python3-grpc-reflection
 
 %description -n python3-grpcio-reflection
 gRPC Python Reflection package
@@ -649,7 +667,11 @@ Reference package for reflection in GRPC Python.
 %package -n python3-grpcio-status
 Summary:        Status proto mapping for gRPC
 License:        Apache-2.0
+
 BuildArch:      noarch
+
+# https://docs.fedoraproject.org/en-US/packaging-guidelines/Python/#_provides_for_importable_modules
+%py_provides python3-grpc-status
 
 %description -n python3-grpcio-status
 gRPC Python Status Proto
@@ -661,7 +683,11 @@ Reference package for GRPC Python status proto mapping.
 %package -n python3-grpcio-testing
 Summary:        Testing utilities for gRPC Python
 License:        Apache-2.0
+
 BuildArch:      noarch
+
+# https://docs.fedoraproject.org/en-US/packaging-guidelines/Python/#_provides_for_importable_modules
+%py_provides python3-grpc-testing
 
 %description -n python3-grpcio-testing
 gRPC Python Testing Package
