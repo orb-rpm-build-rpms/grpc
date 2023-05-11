@@ -314,6 +314,8 @@ BuildRequires:  curl
 BuildRequires:  ca-certificates
 # For converting absolute symlinks in the buildroot to relative ones
 BuildRequires:  symlinks
+# For hardlinking duplicate files in the examples
+BuildRequires:  hardlink
 
 # Apply Fedora system crypto policies. Since this is Fedora-specific, the patch
 # is not suitable for upstream.
@@ -1029,6 +1031,8 @@ install -D -t '%{buildroot}%{_pkgdocdir}' -m 0644 -p \
     SECURITY.md \
     TROUBLESHOOTING.md
 cp -rvp doc examples '%{buildroot}%{_pkgdocdir}'
+# Hardlink duplicate files in the examples
+hardlink -v '%{buildroot}%{_pkgdocdir}/examples/'
 
 
 %check
