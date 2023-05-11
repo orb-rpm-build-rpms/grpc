@@ -1549,7 +1549,7 @@ fi
 
 %files data
 %license LICENSE NOTICE.txt
-%dir %{_datadir}/grpc
+%dir %{_datadir}/grpc/
 %{_datadir}/grpc/roots.pem
 
 
@@ -1601,11 +1601,11 @@ fi
 %{_libdir}/libgrpc.so
 %{_libdir}/libgrpc_unsecure.so
 %{_libdir}/libupb.so
-%{_includedir}/grpc
+%{_includedir}/grpc/
 %{_libdir}/pkgconfig/gpr.pc
 %{_libdir}/pkgconfig/grpc.pc
 %{_libdir}/pkgconfig/grpc_unsecure.pc
-%{_libdir}/cmake/grpc
+%{_libdir}/cmake/grpc/
 
 %{_libdir}/libgrpc++.so
 %{_libdir}/libgrpc++_alts.so
@@ -1618,44 +1618,44 @@ fi
 %{_libdir}/pkgconfig/grpc++_unsecure.pc
 
 %{_libdir}/libgrpcpp_channelz.so
-%{_includedir}/grpcpp
+%{_includedir}/grpcpp/
 
 
 %files -n python3-grpcio
 %license LICENSE NOTICE.txt LICENSE-utf8_range
-%{python3_sitearch}/grpc
-%{python3_sitearch}/grpcio-%{pyversion}-py%{python3_version}.egg-info
+%{python3_sitearch}/grpc/
+%{python3_sitearch}/grpcio-%{pyversion}-py%{python3_version}.egg-info/
 
 
 %files -n python3-grpcio-tools
 %license LICENSE NOTICE.txt LICENSE-utf8_range
-%{python3_sitearch}/grpc_tools
-%{python3_sitearch}/grpcio_tools-%{pyversion}-py%{python3_version}.egg-info
+%{python3_sitearch}/grpc_tools/
+%{python3_sitearch}/grpcio_tools-%{pyversion}-py%{python3_version}.egg-info/
 
 
 %files -n python3-grpcio-channelz
-%{python3_sitelib}/grpc_channelz
-%{python3_sitelib}/grpcio_channelz-%{pyversion}-py%{python3_version}.egg-info
+%{python3_sitelib}/grpc_channelz/
+%{python3_sitelib}/grpcio_channelz-%{pyversion}-py%{python3_version}.egg-info/
 
 
 %files -n python3-grpcio-health-checking
-%{python3_sitelib}/grpc_health
-%{python3_sitelib}/grpcio_health_checking-%{pyversion}-py%{python3_version}.egg-info
+%{python3_sitelib}/grpc_health/
+%{python3_sitelib}/grpcio_health_checking-%{pyversion}-py%{python3_version}.egg-info/
 
 
 %files -n python3-grpcio-reflection
-%{python3_sitelib}/grpc_reflection
-%{python3_sitelib}/grpcio_reflection-%{pyversion}-py%{python3_version}.egg-info
+%{python3_sitelib}/grpc_reflection/
+%{python3_sitelib}/grpcio_reflection-%{pyversion}-py%{python3_version}.egg-info/
 
 
 %files -n python3-grpcio-status
-%{python3_sitelib}/grpc_status
-%{python3_sitelib}/grpcio_status-%{pyversion}-py%{python3_version}.egg-info
+%{python3_sitelib}/grpc_status/
+%{python3_sitelib}/grpcio_status-%{pyversion}-py%{python3_version}.egg-info/
 
 
 %files -n python3-grpcio-testing
-%{python3_sitelib}/grpc_testing
-%{python3_sitelib}/grpcio_testing-%{pyversion}-py%{python3_version}.egg-info
+%{python3_sitelib}/grpc_testing/
+%{python3_sitelib}/grpcio_testing-%{pyversion}-py%{python3_version}.egg-info/
 
 
 %changelog
