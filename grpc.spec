@@ -1,5 +1,5 @@
-# We need to use C++17 to link against the system abseil-cpp, or we get linker
-# errors.
+# We need to use C++17 to link against the system abseil-cpp, since it was
+# compiled with C++17 (an intentional abseil-cpp design decision).
 %global cpp_std 17
 
 # However, we also get linker errors building the tests if we link against the
