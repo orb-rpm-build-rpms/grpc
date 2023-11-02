@@ -1,7 +1,7 @@
-From 3100ba858cd47bb7fc2fa33cbf290fb6fd48372f Mon Sep 17 00:00:00 2001
+From d583a79750a7f3cf2c955d880ebfbfd5b8aa1675 Mon Sep 17 00:00:00 2001
 From: "Benjamin A. Beasley" <code@musicinmybrain.net>
 Date: Thu, 2 Nov 2023 07:00:37 -0400
-Subject: [PATCH] Do not call PyEval_InitThreads
+Subject: [PATCH] [Python] Do not call PyEval_InitThreads
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
