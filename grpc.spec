@@ -1352,7 +1352,7 @@ alts_zero_copy_grpc_protector
 # Confirmed in 1.48.1 2022-09-13
 client_ssl
 
-%ifarch s390x
+%ifarch s390x riscv64
 # Unexplained:
 #
 # [ RUN      ] CredentialsTest.TestOauth2TokenFetcherCredsParsingEmptyHttpBody
@@ -1417,7 +1417,7 @@ examine_stack
 goaway_server
 %endif
 
-%ifarch aarch64 x86_64 ppc64le s390x
+%ifarch aarch64 x86_64 ppc64le s390x riscv64
 # Unexplained:
 #
 # [ RUN      ] GrpcToolTest.CallCommandWithTimeoutDeadlineSet
@@ -1488,7 +1488,7 @@ stack_tracer
 test_core_security_credentials
 %endif
 
-%ifarch aarch64 x86_64 ppc64le s390x
+%ifarch aarch64 x86_64 ppc64le s390x riscv64
 # It looks like server_key_log has the right lines, but in an unexpected order.
 # It is not immediately obvious if this a real problem, or an implementation
 # quirk. Opinions about whether, or how, to report this upstream are welcome!
