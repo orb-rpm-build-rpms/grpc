@@ -214,6 +214,8 @@ BuildRequires:  pkgconfig(protobuf)
 BuildRequires:  protobuf-compiler
 BuildRequires:  pkgconfig(re2)
 BuildRequires:  pkgconfig(openssl)
+# https://fedoraproject.org/wiki/Changes/OpensslDeprecateEngine
+BuildRequires:  openssl-devel-engine
 BuildRequires:  cmake(c-ares)
 BuildRequires:  abseil-cpp-devel
 # Sets XXH_INCLUDE_ALL, which means xxhash is used as a header-only library
