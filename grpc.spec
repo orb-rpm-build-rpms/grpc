@@ -286,9 +286,6 @@ BuildRequires:  python3dist(googleapis-common-protos) >= 1.5.5
 # Similarly, grpcio_admin depends on grpcio_channelz and grpcio_csds.
 
 # grpcio_tests (src/python/grpcio_tests/setup.py) install_requires:
-BuildRequires:  python3dist(coverage) >= 4.0
-
-# grpcio_tests (src/python/grpcio_tests/setup.py) install_requires:
 BuildRequires:  python3dist(oauth2client) >= 1.4.7
 
 # grpcio_tests (src/python/grpcio_tests/setup.py) install_requires:
@@ -432,6 +429,12 @@ Patch:          0001-Specify-noexcept-for-cdef-functions.patch
 # [Python] Do not call PyEval_InitThreads
 # https://github.com/grpc/grpc/pull/34857
 Patch:          %{forgeurl}/pull/34857.patch
+
+# Downstream-only patch to remove usage of coverage, per the packaging
+# guidelines.  This reduces the build-time dependencies, which slightly speeds
+# up builds.  It also makes this package easier port to new EPEL branches.
+# https://docs.fedoraproject.org/en-US/packaging-guidelines/Python/#_linters
+Patch:          0001-Remove-usage-of-coverage.patch
 
 Requires:       grpc-data = %{version}-%{release}
 
