@@ -214,7 +214,7 @@ BuildRequires:  pkgconfig(protobuf)
 BuildRequires:  protobuf-compiler
 BuildRequires:  pkgconfig(re2)
 BuildRequires:  pkgconfig(openssl)
-%if ! (0%{?rhel} >= 10)
+%if ! (0%{?rhel} >= 10 || 0%{?fedora} >= 45)
 # https://fedoraproject.org/wiki/Changes/OpensslDeprecateEngine
 BuildRequires:  openssl-devel-engine
 %endif
@@ -451,6 +451,9 @@ Patch:          0001-Remove-usage-of-coverage.patch
 # such package, nor has this version of grpc has not caught up with the
 # removal of engine and related headers.
 Patch:		grpc-1.48.4-core-tsi-ssl_transport_security.cc.patch
+
+# OpenSSL 4 build fixes
+Patch:          0001-Update-OpenSSL-API-usage-for-compatibility.patch
 
 Requires:       grpc-data = %{version}-%{release}
 
