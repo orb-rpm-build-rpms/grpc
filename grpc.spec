@@ -242,6 +242,7 @@ BuildRequires:  gdb
 
 BuildRequires:  python3-devel
 BuildRequires:  python3dist(setuptools)
+BuildRequires:  python3-pkg-resources
 
 # grpcio (setup.py) setup_requires (with
 #     GRPC_PYTHON_ENABLE_DOCUMENTATION_BUILD, which is NOT enabled):
@@ -682,6 +683,7 @@ Python language bindings for gRPC (HTTP/2-based RPC framework).
 
 %package -n python3-grpcio-tools
 Summary:       Package for gRPC Python tools
+Requires:      python3-pkg-resources
 # License:        same as base package
 
 Provides:       bundled(upb)
