@@ -210,8 +210,10 @@ BuildRequires:  chrpath
 
 BuildRequires:  pkgconfig(zlib)
 BuildRequires:  cmake(gflags)
+# enforce compat package protobuf3
+BuildRequires:  protobuf-devel < 4
 BuildRequires:  pkgconfig(protobuf)
-BuildRequires:  protobuf-compiler
+BuildRequires:  protobuf-compiler < 4
 BuildRequires:  pkgconfig(re2)
 BuildRequires:  pkgconfig(openssl)
 %if ! (0%{?rhel} >= 10 || 0%{?fedora} >= 45)
@@ -226,6 +228,7 @@ BuildRequires:  xxhash-static
 
 %if %{with core_tests}
 BuildRequires:  cmake(benchmark)
+BuildRequires:  libpfm-devel
 %if %{with system_gtest}
 BuildRequires:  cmake(gtest)
 BuildRequires:  pkgconfig(gmock)
@@ -277,6 +280,7 @@ BuildRequires: python3dist(cython) > 0.23
 # grpcio_testing (src/python/grpcio_testing/setup.py) install_requires:
 # grpcio_tests (src/python/grpcio_tests/setup.py) install_requires:
 # grpcio_tools (tools/distrib/python/grpcio_tools/setup.py) install_requires:
+BuildRequires:  python3-protobuf < 4
 BuildRequires:  python3dist(protobuf) >= 3.12.0
 
 # grpcio_status (src/python/grpcio_status/setup.py) install_requires:
@@ -583,7 +587,7 @@ Summary:        Protocol buffers compiler plugins for gRPC
 
 Requires:       grpc%{?_isa} = %{version}-%{release}
 Requires:       grpc-cpp%{?_isa} = %{version}-%{release}
-Requires:       protobuf-compiler
+Requires:       protobuf-compiler < 4
 
 Provides:       bundled(upb)
 Provides:       bundled(utf8_range)
