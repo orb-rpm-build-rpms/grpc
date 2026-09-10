@@ -61,6 +61,14 @@
 %global xds_url https://github.com/cncf/xds
 %global xds_dir xds-%{xds_commit}
 
+# protoc-gen-validate (PGV), a git submodule newer grpc references for its
+# validate/validate.proto. The repo moved from envoyproxy to bufbuild; the
+# submodule pin at grpc v1.78.0 is exactly the v1.2.1 tag, which is also what
+# grpc's CMake would otherwise download.
+%global protoc_gen_validate_version 1.2.1
+%global protoc_gen_validate_url https://github.com/bufbuild/protoc-gen-validate
+%global protoc_gen_validate_dir protoc-gen-validate-%{protoc_gen_validate_version}
+
 # =====
 
 # This must be enabled to get grpc_cli, which is apparently considered part of
@@ -186,6 +194,7 @@ Source2:        %{envoy_api_url}/archive/%{envoy_api_commit}/%{envoy_api_dir}.ta
 Source3:        %{googleapis_url}/archive/%{googleapis_commit}/%{googleapis_dir}.tar.gz
 Source4:        %{opencensus_proto_url}/archive/v%{opencensus_proto_version}/%{opencensus_proto_dir}.tar.gz
 Source5:        %{xds_url}/archive/%{xds_commit}/%{xds_dir}.tar.gz
+Source6:        %{protoc_gen_validate_url}/archive/v%{protoc_gen_validate_version}/%{protoc_gen_validate_dir}.tar.gz
 
 # Downstream grpc_cli man pages; hand-written based on “grpc_cli help” output.
 Source100:      grpc_cli.1
@@ -764,12 +773,14 @@ sed -r -i '/((RE2|ABSL)_INCLUDE|libabsl_)/s|/usr|%{_prefix}|' setup.py
 %setup -q -T -D -b 3 -n grpc-%{srcversion}
 %setup -q -T -D -b 4 -n grpc-%{srcversion}
 %setup -q -T -D -b 5 -n grpc-%{srcversion}
+%setup -q -T -D -b 6 -n grpc-%{srcversion}
 {
   awk '$1 ~ /^(#|$)/ { next }; 1' <<'EOF'
 ../%{envoy_api_dir}/ third_party/envoy-api/
 ../%{googleapis_dir}/ third_party/googleapis/
 ../%{opencensus_proto_dir}/ third_party/opencensus-proto/
 ../%{xds_dir}/ third_party/xds/
+../%{protoc_gen_validate_dir}/ third_party/protoc-gen-validate/
 EOF
 } | while read -r fromdir todir
 do
