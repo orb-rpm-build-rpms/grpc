@@ -11,10 +11,10 @@
 # We take measures to verify this in %%check. As long as we are using our own
 # copy, we use the exact same version as upstream.
 %global gtest_url https://github.com/google/googletest
-%global gtest_dir googletest-%{gtest_commit}
-%global gtest_commit 0e402173c97aea7a00749e825b194bfede4f2e45
-#global gtest_version 1.11.0
-#global gtest_dir googletest-release-#{gtest_version}
+# grpc 1.78.0 pins googletest 1.17.0 (bazel/grpc_deps.bzl). gtest is only used
+# when the core_tests bcond (below) is enabled.
+%global gtest_version 1.17.0
+%global gtest_dir googletest-%{gtest_version}
 %bcond system_gtest        0
 
 # =====
@@ -44,11 +44,12 @@
 # it is unlikely to every be successfully packaged under the Fedora packaging
 # guidelines. Note that the URL is a read-only mirror based on
 # https://github.com/envoyproxy/envoy, with different commit hashes.
-%global envoy_api_commit 9c42588c956220b48eb3099d186487c2f04d32ec
+# Third-party proto commit hashes for grpc 1.78.0 (bazel/grpc_deps.bzl).
+%global envoy_api_commit 4de3c74cf21a9958c1cf26d8993c55c6e0d28b49
 %global envoy_api_url https://github.com/envoyproxy/data-plane-api
 %global envoy_api_dir data-plane-api-%{envoy_api_commit}
 
-%global googleapis_commit 2f9af297c84c55c8b871ba4495e01ade42476c92
+%global googleapis_commit fe8ba054ad4f7eca946c2d14a63c3f07c0b586a0
 %global googleapis_url https://github.com/googleapis/googleapis
 %global googleapis_dir googleapis-%{googleapis_commit}
 
@@ -56,7 +57,7 @@
 %global opencensus_proto_url https://github.com/census-instrumentation/opencensus-proto
 %global opencensus_proto_dir opencensus-proto-%{opencensus_proto_version}
 
-%global xds_commit cb28da3451f158a947dfc45090fe92b07b243bc1
+%global xds_commit 3a472e524827f72d1ad621c4983dd5af54c46776
 %global xds_url https://github.com/cncf/xds
 %global xds_dir xds-%{xds_commit}
 
@@ -116,7 +117,7 @@
 # documentation. Instead, we have just dropped all documentation.
 
 Name:           grpc
-Version:        1.48.4
+Version:        1.78.0
 Release:        %autorelease
 Summary:        RPC library and framework
 
@@ -124,11 +125,11 @@ Summary:        RPC library and framework
 %global pyversion %(echo '%{version}' | tr -d '~')
 
 # CMakeLists.txt: gRPC_CORE_SOVERSION
-%global c_so_version 26
+%global c_so_version 52
 # CMakeLists.txt: gRPC_CPP_SOVERSION
 # See https://github.com/abseil/abseil-cpp/issues/950#issuecomment-843169602
 # regarding unusual C++ SOVERSION style (not a single number).
-%global cpp_so_version 1.48
+%global cpp_so_version 1.78
 
 # The entire source is Apache-2.0 except the following:
 #
@@ -180,8 +181,7 @@ License:        Apache-2.0 AND BSD-2-Clause AND BSD-3-Clause AND MIT
 URL:            https://www.grpc.io
 %global forgeurl https://github.com/grpc/grpc/
 Source0:        %{forgeurl}/archive/v%{srcversion}/grpc-%{srcversion}.tar.gz
-Source1:        %{gtest_url}/archive/%{gtest_commit}/%{gtest_dir}.tar.gz
-#Source1:        #{gtest_url}/archive/release-#{gtest_version}/#{gtest_dir}.tar.gz
+Source1:        %{gtest_url}/archive/v%{gtest_version}/%{gtest_dir}.tar.gz
 Source2:        %{envoy_api_url}/archive/%{envoy_api_commit}/%{envoy_api_dir}.tar.gz
 Source3:        %{googleapis_url}/archive/%{googleapis_commit}/%{googleapis_dir}.tar.gz
 Source4:        %{opencensus_proto_url}/archive/v%{opencensus_proto_version}/%{opencensus_proto_dir}.tar.gz
@@ -210,10 +210,16 @@ BuildRequires:  chrpath
 
 BuildRequires:  pkgconfig(zlib)
 BuildRequires:  cmake(gflags)
-# enforce compat package protobuf3
-BuildRequires:  protobuf-devel < 4
+# grpc 1.78.0 targets protobuf 6.x (bazel/grpc_deps.bzl pins the 6.31.x line, and
+# grpcio-tools declares protobuf>=6.31.1,<7.0.0). It is built here against the
+# protobuf 6.33.5 we package (protobuf:release-33 / python-protobuf:release-6.33),
+# so the old "< 4" compat-package caps are lifted to require 6.x.
+BuildRequires:  protobuf-devel >= 6.31.1
 BuildRequires:  pkgconfig(protobuf)
-BuildRequires:  protobuf-compiler < 4
+# protobuf-compiler carries the C++ version scheme (e.g. 33.5), not the Python
+# 6.x scheme used by protobuf-devel/python3-protobuf; the 6.31.x Python line
+# corresponds to the 31.x C++ line, so the floor here is expressed as 31.1.
+BuildRequires:  protobuf-compiler >= 31.1
 BuildRequires:  pkgconfig(re2)
 BuildRequires:  pkgconfig(openssl)
 %if ! (0%{?rhel} >= 10 || 0%{?fedora} >= 45)
@@ -280,8 +286,8 @@ BuildRequires: python3dist(cython) > 0.23
 # grpcio_testing (src/python/grpcio_testing/setup.py) install_requires:
 # grpcio_tests (src/python/grpcio_tests/setup.py) install_requires:
 # grpcio_tools (tools/distrib/python/grpcio_tools/setup.py) install_requires:
-BuildRequires:  python3-protobuf < 4
-BuildRequires:  python3dist(protobuf) >= 3.12.0
+BuildRequires:  python3-protobuf >= 6.31.1
+BuildRequires:  python3dist(protobuf) >= 6.31.1
 
 # grpcio_status (src/python/grpcio_status/setup.py) install_requires:
 BuildRequires:  python3dist(googleapis-common-protos) >= 1.5.5
@@ -323,142 +329,51 @@ BuildRequires:  symlinks
 # For hardlinking duplicate files in the examples
 BuildRequires:  hardlink
 
-# Apply Fedora system crypto policies. Since this is Fedora-specific, the patch
-# is not suitable for upstream.
+# ~~~~ Patches ~~~~
+#
+# The 1.48.x Fedora patch set was reassessed against 1.78.0 by test-applying each
+# patch to the release source. The three that survive are carried below; the rest
+# were dropped for reasons verified in the 1.78.0 tree, recorded after them.
+
+# Apply Fedora system crypto policies to the SSL handshake tests, which still
+# hard-code an explicit ECDHE cipher list; rewrite it to "PROFILE=SYSTEM".
+# Fedora-specific, so not suitable for upstream.
 # https://docs.fedoraproject.org/en-US/packaging-guidelines/CryptoPolicies/#_cc_applications
-#
-# In fact, this may not be needed, since only testing code is patched.
-Patch:          grpc-1.39.0-system-crypto-policies.patch
-# Fix errors like:
-#   TypeError: super(type, obj): obj must be an instance or subtype of type
-# It is not clear why these occur.
-Patch:          grpc-1.36.4-python-grpcio_tests-fixture-super.patch
+# Refreshed for 1.78.0: the obsolete Objective-C Cronet hunk was dropped (that
+# test file no longer exists); the two core/handshake hunks remain.
+Patch:          grpc-system-crypto-policies.patch
 # Skip tests requiring non-loopback network access when the
-# FEDORA_NO_NETWORK_TESTS environment variable is set.
+# FEDORA_NO_NETWORK_TESTS environment variable is set. Applies unchanged to
+# 1.78.0.
 Patch:          grpc-1.40.0-python-grpcio_tests-make-network-tests-skippable.patch
-# A handful of compression tests miss the compression ratio threshold. It seems
-# to be inconsistent which particular combinations fail in a particular test
-# run. It is not clear that this is a real problem. Any help in understanding
-# the actual cause well enough to fix this or usefully report it upstream is
-# welcome.
-Patch:          grpc-1.48.0-python-grpcio_tests-skip-compression-tests.patch
-# The upstream requirement to link gtest/gmock from grpc_cli is spurious.
-# Remove it. We still have to build the core tests and link a test library
-# (libgrpc++_test_config.so…)
-Patch:          grpc-1.37.0-grpc_cli-do-not-link-gtest-gmock.patch
-# Fix confusion about path to python_wrapper.sh in httpcli/httpscli tests. I
-# suppose that the unpatched code must be correct for how upstream runs the
-# tests, somehow.
-Patch:          grpc-1.45.0-python_wrapper-path.patch
-# Skip failing ChannelzServicerTest tests on Python 3.11
-#
-# Partially works around:
-#
-# grpc fails to build with Python 3.11: AttributeError: module 'inspect' has no
-#   attribute 'getargspec'
-# https://bugzilla.redhat.com/show_bug.cgi?id=2095027
-#
-# TODO: Attempt to reproduce this outside the RPM build environment and submit
-# a useful/actionable upstream bug report.
-Patch:          grpc-1.46.3-ChannelzServicerTest-python3.11-regressions.patch
-# Running Python “test_lite”, in grpcio_tests,
-# unit._dynamic_stubs_test.DynamicStubTest.test_grpc_tools_unimportable hangs.
-# This may be related to:
-#   [FLAKE] DynamicStubTest timeout under gevent macOS
-#   https://github.com/grpc/grpc/issues/25368
-# The patch simply skips the test.
-Patch:          grpc-1.48.0-python-grpcio_tests-DynamicStubTest-hang.patch
-# Use CMake variables for paths in pkg-config files
-#
-# Use @gRPC_INSTALL_LIBDIR@ for libdir; this fixes an incorrect
-# -L/usr/lib on multilib Linux systems where that is the 32-bit library
-# path and the correct path is /usr/lib64.
-#
-# Use @gRPC_INSTALL_INCLUDEDIR@ for consistency.
-#
-# See also:
-# https://lists.fedoraproject.org/archives/list/devel@lists.fedoraproject.org/
-#   thread/P2N35UMQVEXPILAF47RQB53MWRV2GM3J/
-#
-# https://github.com/grpc/grpc/pull/31671
-Patch:          %{forgeurl}/pull/31671.patch
-# [Test] Use ssl.SSLContext.wrap_socket, not ssl.wrap_socket
-#
-# The latter emits a DeprecationWarning since Python 3.10 and is removed
-# in Python 3.12.
-#
-# https://github.com/grpc/grpc/pull/33492
-#
-# Backported to 1.48.4.
-Patch:          grpc-1.48.4-wrap_socket.patch
-# [Test] Do not use importlib find_module API, removed in Python 3.12
-# https://github.com/grpc/grpc/pull/33506
-#
-# Backported to 1.48.4.
-Patch:          grpc-1.48.4-find_module.patch
-# Backport several #include directives
-# These were included in https://github.com/grpc/grpc/pull/30952
-#
-# [Fix] Added missing #include (#34359)
-# See: https://github.com/grpc/grpc/pull/34359
-#
-# Add abseil includes in test/cpp/end2end/xds/xds_server.h
-# Downstream-only because the current release, 1.60.0, builds without changes.
-#
-# Together, these fix compatibility with abseil-cpp-20240116.rc1.
-Patch:          grpc-1.48.4-abseil-cpp-includes.patch
-
-# [http2] Dont drop connections on metadata limit exceeded (#32309)
-#
-# * [http] Dont drop connections on metadata limit exceeded
-#
-# * remove bad test
-#
-# * Automated change: Fix sanity tests
-# https://github.com/grpc/grpc/commit/29d8beee0ac2555773b2a2dda5601c74a95d6c10
-# https://github.com/grpc/grpc/pull/32309
-#
-# Fixes CVE-2023-32732
-# https://nvd.nist.gov/vuln/detail/CVE-2023-32732
-# CVE-2023-32732 grpc: denial of service [fedora-all]
-# https://bugzilla.redhat.com/show_bug.cgi?id=2214470
-#
-# Backported to 1.48.4.
-Patch:          0001-http2-Dont-drop-connections-on-metadata-limit-exceed.patch
-# [Python] Specify noexcept for cdef functions (#34242)
-#
-# This is needed to build grpc with Cython 3.
-#
-# https://github.com/grpc/grpc/issues/33918#issuecomment-1703386656
-# https://github.com/grpc/grpc/issues/33918#issuecomment-1788823585
-# https://github.com/grpc/grpc/pull/34242
-Patch:          0001-Specify-noexcept-for-cdef-functions.patch
-# [Python] Do not call PyEval_InitThreads
-# https://github.com/grpc/grpc/pull/34857
-Patch:          %{forgeurl}/pull/34857.patch
-# Downstream-only: work around Distribution.tests_require removal
-#
-# This is not suitable for offering upstream because we are so far behind
-# upstream, and because it means test dependencies are no longer correctly
-# generated (but the alternative is for the package not to buiild with
-# setuptools 74+ at all).
-Patch:          0001-Downstream-only-work-around-Distribution.tests_requi.patch
-
-# Downstream-only patch to remove usage of coverage, per the packaging
-# guidelines.  This reduces the build-time dependencies, which slightly speeds
-# up builds.  It also makes this package easier port to new EPEL branches.
+# Downstream-only: remove usage of coverage, per the packaging guidelines. This
+# drops the coverage build/runtime dependency of grpcio-tests.
 # https://docs.fedoraproject.org/en-US/packaging-guidelines/Python/#_linters
+# Refreshed for 1.78.0 (grpcio_tests setup.py/_loader.py/_result.py were
+# reformatted upstream, so the hunks were regenerated).
 Patch:          0001-Remove-usage-of-coverage.patch
 
-# Don't include <openssl/engine.h>
-# OpenSSL in Fedora provides this header in a separate openssl-devel-engine
-# RPM, which is deprecated and subject to future removal.. RHEL10 has no
-# such package, nor has this version of grpc has not caught up with the
-# removal of engine and related headers.
-Patch:		grpc-1.48.4-core-tsi-ssl_transport_security.cc.patch
-
-# OpenSSL 4 build fixes
-Patch:          0001-Update-OpenSSL-API-usage-for-compatibility.patch
+# Dropped in the 1.78.0 port -- fixes now present upstream (each verified in the
+# 1.78.0 source):
+#   * http2 metadata-limit connection-drop (CVE-2023-32732, PR 32309)
+#   * Cython 3 "noexcept" cdef declarations (PR 34242) -- already in _cygrpc
+#   * removal of PyEval_InitThreads (PR 34857) -- no longer called
+#   * pkg-config libdir/includedir CMake variables (PR 31671)
+#   * ssl.SSLContext.wrap_socket / importlib find_module (Python 3.12 fixes)
+#   * abseil-cpp include backports (for abseil 20240116; 1.78.0 targets a newer
+#     abseil and builds without them)
+#   * grpc_cli gtest/gmock delinking -- grpc_cli no longer compiles gtest-all.cc
+#   * Distribution.tests_require workaround -- grpcio_tests/commands.py no longer
+#     touches tests_require at all
+# Dropped as inapplicable on this F44 target:
+#   * OpenSSL <engine.h> removal and OpenSSL 4 API fixes -- F44 ships OpenSSL 3.x
+#     and provides the header via openssl-devel-engine (BuildRequired below for
+#     Fedora < 45), which 1.78.0 still includes.
+# Deferred (test-only fixups pinned to 1.36-1.48 source that no longer applies):
+# the grpcio_tests super()/compression/DynamicStubTest skips, the python_wrapper
+# path fix, and the Python 3.11 ChannelzServicer regressions. Any of these tests
+# that still fail against protobuf 6.x / Python 3.14 are re-skipped with fresh
+# %%check exclusions, not by resurrecting the stale patches.
 
 Requires:       grpc-data = %{version}-%{release}
 
@@ -472,9 +387,10 @@ Requires:       grpc-data = %{version}-%{release}
 # Note that upstream has never chosen a version, and it is not clear from which
 # commit the bundled copy was taken or forked.
 #
-# Note also that libupb is installed in the system-wide linker path, which will
-# be a problem if upb is ever packaged separately. We will cross that bridge if
-# we get there.
+# Note also that the upb libraries (now split into a family of libupb_*_lib
+# shared objects) are installed in the system-wide linker path, which will be a
+# problem if upb is ever packaged separately. We will cross that bridge if we
+# get there.
 Provides:       bundled(upb)
 # The bundled upb itself bundles https://github.com/cyb70289/utf8; we follow
 # upstream in styling this as “utf8_range”. It cannot reasonably be unbundled
@@ -783,7 +699,9 @@ Testing utilities for gRPC Python.
 %prep
 %autosetup -p1 -n grpc-%{srcversion}
 
-cp -p third_party/upb/third_party/utf8_range/LICENSE LICENSE-utf8_range
+# utf8_range moved out of upb's third_party tree in newer grpc; it now lives at
+# third_party/utf8_range/.
+cp -p third_party/utf8_range/LICENSE LICENSE-utf8_range
 
 echo '===== Patching grpcio_tools for system protobuf =====' 2>&1
 # Build python3-grpcio_tools against system protobuf packages instead of
@@ -796,9 +714,15 @@ sed -r -i \
     -e "s/^(# AUTO-GENERATED .*)/\\1\\n\
 # Then, modified by hand to build with an external system protobuf\
 # installation./" \
-    -e 's/^(CC_FILES=\[).*(\])/\1\2/' \
     -e "s@^((CC|PROTO)_INCLUDE=')[^']+'@\1%{_includedir}'@" \
     -e '/^PROTOBUF_SUBMODULE_VERSION=/d' \
+    'tools/distrib/python/grpcio_tools/protoc_lib_deps.py'
+# Empty the CC_FILES list so grpcio_tools links the system protobuf compiler
+# library (-lprotoc, added to GRPC_PYTHON_LDFLAGS in %%build) instead of
+# compiling the bundled abseil/protobuf/upb C++ sources. In newer grpc this list
+# spans many lines, so a single-line substitution no longer suffices; collapse
+# the whole "CC_FILES=[ ... ]" block to an empty list.
+sed -r -i '/^CC_FILES=\[/,/^\]$/c\CC_FILES=[]' \
     'tools/distrib/python/grpcio_tools/protoc_lib_deps.py'
 
 echo '===== Preparing gtest/gmock =====' 2>&1
@@ -918,8 +842,9 @@ echo '===== Fixing hard-coded C++ standard =====' 2>&1
 # We need to adjust the C++ standard to avoid abseil-related linker errors. For
 # the main C++ build, we can use CMAKE_CXX_STANDARD. For extensions, examples,
 # etc., we must patch.
+# grpc.gyp was removed upstream, so it is no longer in this list.
 sed -r -i 's/(std=c\+\+)14/\1%{cpp_std}/g' \
-    setup.py grpc.gyp Rakefile \
+    setup.py Rakefile \
     examples/cpp/*/Makefile \
     examples/cpp/*/CMakeLists.txt \
     tools/run_tests/artifacts/artifact_targets.py \
@@ -1680,7 +1605,11 @@ fi
 %{_libdir}/libgpr.so.%{c_so_version}{,.*}
 %{_libdir}/libgrpc.so.%{c_so_version}{,.*}
 %{_libdir}/libgrpc_unsecure.so.%{c_so_version}{,.*}
-%{_libdir}/libupb.so.%{c_so_version}{,.*}
+# Newer grpc splits the single libupb into a family of upb_*_lib shared
+# libraries and installs utf8_range as its own library; all carry the C-core
+# soversion. Globbed so upb library churn between releases needs no spec change.
+%{_libdir}/libupb_*_lib.so.%{c_so_version}{,.*}
+%{_libdir}/libutf8_range_lib.so.%{c_so_version}{,.*}
 
 
 %files data
@@ -1712,6 +1641,10 @@ fi
 %{_libdir}/libgrpc++_unsecure.so.%{cpp_so_version}{,.*}
 %{_libdir}/libgrpc_plugin_support.so.%{cpp_so_version}{,.*}
 
+# New in this release: the authorization policy provider is built as its own
+# C++ shared library carrying the C++ soversion.
+%{_libdir}/libgrpc_authorization_provider.so.%{cpp_so_version}{,.*}
+
 %{_libdir}/libgrpcpp_channelz.so.%{cpp_so_version}{,.*}
 
 
@@ -1736,7 +1669,8 @@ fi
 %{_libdir}/libgpr.so
 %{_libdir}/libgrpc.so
 %{_libdir}/libgrpc_unsecure.so
-%{_libdir}/libupb.so
+%{_libdir}/libupb_*_lib.so
+%{_libdir}/libutf8_range_lib.so
 %{_includedir}/grpc/
 %{_libdir}/pkgconfig/gpr.pc
 %{_libdir}/pkgconfig/grpc.pc
@@ -1749,6 +1683,7 @@ fi
 %{_libdir}/libgrpc++_reflection.so
 %{_libdir}/libgrpc++_unsecure.so
 %{_libdir}/libgrpc_plugin_support.so
+%{_libdir}/libgrpc_authorization_provider.so
 %{_includedir}/grpc++/
 %{_libdir}/pkgconfig/grpc++.pc
 %{_libdir}/pkgconfig/grpc++_unsecure.pc
