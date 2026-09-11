@@ -975,14 +975,33 @@ echo '===== Building pure-Python packages =====' 1>&2
 for suffix in channelz health_checking reflection status testing tests
 do
   echo "----> grpcio_${suffix} <----" 1>&2
-  pushd "src/python/grpcio_${suffix}/" >/dev/null
-  if ! echo "${suffix}" | grep -E "^(admin|csds)$" >/dev/null
+  pkgdir="src/python/grpcio_${suffix}"
+  # As of 1.78.0, grpcio_tests gathers and generates its protos using paths
+  # relative to the current directory and expects to run from the repository
+  # root: preprocess copies the top-level src/proto tree into the package, and
+  # build_package_protos generates the modules under the package's relative path.
+  # Earlier releases prefixed both with an absolute path, so running from the
+  # package directory worked; this one no longer does (see the TODO in
+  # grpcio_tests/commands.py). Run those two steps from the root for grpcio_tests
+  # (setup.py finds its helper modules via the script directory, so the working
+  # directory is free to be the root). The other packages run them, as before,
+  # from their own directory below.
+  if [ "${suffix}" = tests ]
   then
-    %{__python3} %{py_setup} %{?py_setup_args} preprocess
+    %{__python3} "${pkgdir}/%{py_setup}" %{?py_setup_args} preprocess
+    %{__python3} "${pkgdir}/%{py_setup}" %{?py_setup_args} build_package_protos
   fi
-  if ! echo "${suffix}" | grep -E "^(admin|csds|testing)$" >/dev/null
+  pushd "${pkgdir}/" >/dev/null
+  if [ "${suffix}" != tests ]
   then
-    %{__python3} %{py_setup} %{?py_setup_args} build_package_protos
+    if ! echo "${suffix}" | grep -E "^(admin|csds)$" >/dev/null
+    then
+      %{__python3} %{py_setup} %{?py_setup_args} preprocess
+    fi
+    if ! echo "${suffix}" | grep -E "^(admin|csds|testing)$" >/dev/null
+    then
+      %{__python3} %{py_setup} %{?py_setup_args} build_package_protos
+    fi
   fi
   %py3_build
   %{__python3} %{py_setup} %{?py_setup_args} install \
