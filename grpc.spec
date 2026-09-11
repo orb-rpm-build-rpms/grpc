@@ -1036,6 +1036,10 @@ install -t '%{buildroot}/%{_mandir}/man1' -p -m 0644 \
 
 # Remove any static libraries that may have been installed against our wishes
 find %{buildroot} -type f -name '*.a' -print -delete
+# CMake installs a pkg-config file for the OpenTelemetry C++ plugin even though
+# we do not build or ship that plugin library. Drop the orphaned file so it does
+# not advertise a link against a library that is absent.
+rm -v %{buildroot}%{_libdir}/pkgconfig/grpcpp_otel_plugin.pc
 # Fix wrong permissions on installed headers
 find %{buildroot}%{_includedir}/grpc* -type f -name '*.h' -perm /0111 \
     -execdir chmod -v a-x '{}' '+'
@@ -1787,6 +1791,7 @@ fi
 
 %files -n python3-grpcio-tools
 %license LICENSE NOTICE.txt LICENSE-utf8_range
+%{_bindir}/python-grpc-tools-protoc
 %{python3_sitearch}/grpc_tools/
 %{python3_sitearch}/grpcio_tools-%{pyversion}-py%{python3_version}.egg-info/
 
