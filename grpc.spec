@@ -976,33 +976,27 @@ for suffix in channelz health_checking reflection status testing tests
 do
   echo "----> grpcio_${suffix} <----" 1>&2
   pkgdir="src/python/grpcio_${suffix}"
-  # As of 1.78.0, grpcio_tests gathers and generates its protos using paths
-  # relative to the current directory and expects to run from the repository
-  # root: preprocess copies the top-level src/proto tree into the package, and
-  # build_package_protos generates the modules under the package's relative path.
-  # Earlier releases prefixed both with an absolute path, so running from the
-  # package directory worked; this one no longer does (see the TODO in
-  # grpcio_tests/commands.py). Run those two steps from the root for grpcio_tests
+  # As of 1.78.0, every grpcio_* package's preprocess and build_package_protos
+  # commands resolve their proto and output paths relative to the current
+  # directory and expect to run from the repository root: preprocess copies the
+  # top-level src/proto tree into the package, and build_package_protos generates
+  # the generated protobuf modules under the package's path relative to the root.
+  # Earlier releases prefixed those paths absolutely, so running from the package
+  # directory worked; this one no longer does. Run both steps from the root
   # (setup.py finds its helper modules via the script directory, so the working
-  # directory is free to be the root). The other packages run them, as before,
-  # from their own directory below.
-  if [ "${suffix}" = tests ]
+  # directory is free to be the root); build and install then run from the
+  # package directory, as before. Skipping this for any package generating protos
+  # leaves its generated modules absent, which only surfaces later as an import
+  # failure in the test suite.
+  if ! echo "${suffix}" | grep -E "^(admin|csds)$" >/dev/null
   then
     %{__python3} "${pkgdir}/%{py_setup}" %{?py_setup_args} preprocess
+  fi
+  if ! echo "${suffix}" | grep -E "^(admin|csds|testing)$" >/dev/null
+  then
     %{__python3} "${pkgdir}/%{py_setup}" %{?py_setup_args} build_package_protos
   fi
   pushd "${pkgdir}/" >/dev/null
-  if [ "${suffix}" != tests ]
-  then
-    if ! echo "${suffix}" | grep -E "^(admin|csds)$" >/dev/null
-    then
-      %{__python3} %{py_setup} %{?py_setup_args} preprocess
-    fi
-    if ! echo "${suffix}" | grep -E "^(admin|csds|testing)$" >/dev/null
-    then
-      %{__python3} %{py_setup} %{?py_setup_args} build_package_protos
-    fi
-  fi
   %py3_build
   %{__python3} %{py_setup} %{?py_setup_args} install \
       -O1 --skip-build --root "${PYROOT}" --prefix %{_prefix}
