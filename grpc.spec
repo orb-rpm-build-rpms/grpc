@@ -520,7 +520,11 @@ Summary:        Protocol buffers compiler plugins for gRPC
 
 Requires:       grpc%{?_isa} = %{version}-%{release}
 Requires:       grpc-cpp%{?_isa} = %{version}-%{release}
-Requires:       protobuf-compiler < 4
+# The plugins run alongside protoc, so they require protobuf-compiler. Lifted
+# from the old "< 4" compat cap to the 6.x line this is built against, matching
+# the BuildRequires above (protobuf-compiler uses the C++ version scheme, where
+# 31.1 corresponds to the protobuf 6.31.1 Python line).
+Requires:       protobuf-compiler >= 31.1
 
 Provides:       bundled(upb)
 Provides:       bundled(utf8_range)
