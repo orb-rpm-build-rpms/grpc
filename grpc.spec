@@ -279,6 +279,14 @@ BuildRequires:  python3dist(six) >= 1.10
 BuildRequires: python3dist(cython) > 0.23
 
 # grpcio (setup.py) install_requires:
+#   typing-extensions~=4.12
+# grpc/_server.py imports "override" from typing_extensions unconditionally, so
+# this is a hard runtime dependency (the automatic Python dependency generator
+# emits the matching Requires from the egg-info); it is listed here only so the
+# server can be imported during the test phase.
+BuildRequires:  python3dist(typing-extensions) >= 4.12
+
+# grpcio (setup.py) install_requires:
 # grpcio_tests (src/python/grpcio_tests/setup.py) install_requires:
 #   futures>=2.2.0; python_version<'3.2'
 
@@ -1652,7 +1660,43 @@ EOF
 curl "http://localhost:${PORT_SERVER_PORT}/quitquitquit" || :
 %endif
 
+# gRPC 1.78 aborts via a fatal assertion (ssl_utils.cc requires pem_root_certs
+# to be non-null) when it cannot load TLS root certificates; earlier releases
+# returned a recoverable error. The Python package ships its bundled roots.pem
+# as a symlink to the system trust bundle, which does not resolve inside the
+# build root, so the roots override callback fails and several secure-channel
+# tests crash the entire suite. Point gRPC at the chroot's trust bundle for the
+# duration of the tests: this takes precedence over the override callback and
+# does not affect what we ship.
+export GRPC_DEFAULT_SSL_ROOTS_FILE_PATH=/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
+
 pushd src/python/grpcio_tests
+
+# The upstream test manifest (tests/tests.json) lists every test suite in the
+# source tree, and the _sanity test asserts that autodiscovery finds exactly
+# those suites. We do not build the optional admin, csds, and observability
+# grpcio packages, and we do not install absl-py for the tests, so those suites
+# (and the insecure interop suite, which imports absl) cannot be imported here.
+# gRPC's test loader silently skips suites whose modules fail to import, so
+# autodiscovery finds fewer suites than the manifest lists and the _sanity check
+# fails. Trim the manifest to the suites we can actually discover; the check
+# still verifies it against discovery for everything we do build.
+%{python3} - <<'END_TESTS_JSON_FILTER'
+import json
+import pathlib
+
+drop_prefixes = (
+    "tests.admin.",
+    "tests.csds.",
+    "tests.observability.",
+    "tests.interop._insecure_intraop_test",
+)
+path = pathlib.Path("tests/tests.json")
+suites = json.loads(path.read_text())
+kept = sorted(s for s in suites if not s.startswith(drop_prefixes))
+path.write_text(json.dumps(kept, indent=2) + "\n")
+END_TESTS_JSON_FILTER
+
 for suite in \
     test_lite \
     %{?with_python_aio_tests:test_aio} \
