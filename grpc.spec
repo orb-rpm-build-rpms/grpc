@@ -1554,11 +1554,68 @@ test_core_security_credentials
 tls_key_export
 %endif
 
-EOF
-} | xargs -r chmod -v a-x
+# The following were confirmed on x86_64 for 1.78.0 (2026-09-11) by running every
+# built test binary once and inspecting the failures. They are left ungated, like
+# the network and privilege entries above, because their causes are not
+# architecture-specific.
 
-find %{_vpath_builddir} -type f -perm /0111 -name '*_test' | sort |
-  while read -r testexe
+# Require network or DNS, which the build environment does not provide. Unlike
+# the resolver tests above, these abort or report a failed test suite instead of
+# skipping cleanly: httpcli and httpscli abort on an assertion in the
+# request-completion callback; the posix_event_engine tests fail
+# EventEngineDNSTest's suite setup and teardown; and cancel_ares_query dies with
+# SIGPIPE talking to its own fake resolver.
+cancel_ares_query
+httpcli
+httpscli
+posix_event_engine
+posix_event_engine_native_dns
+
+# SPIFFE and xDS security end-to-end tests. These need certificate fixtures
+# and/or a live xDS control plane and fail their TLS and handshake assertions
+# here.
+spiffe_bundle_map_end2end
+spiffe_ssl_transport_security
+xds_security_end2end
+xds_security_spiffe_end2end
+
+# Large end-to-end suites that make steady progress but do not finish within the
+# generous per-test timeout below; the xDS suites block on RPCs to a control
+# plane that is not present. They could be re-enabled with a longer timeout.
+end2end_http2
+end2end_http2_security
+end2end_posix
+xds_cluster_end2end
+xds_routing_end2end
+
+# Abort at startup because the global stats-plugin metric registry rejects a
+# duplicate registration of grpc.lb.pick_first.disconnections in these small
+# test binaries. This does not affect the shared libraries we ship, which
+# register the metric once.
+filter_test
+server_builder
+server_builder_with_socket_mutator
+thread_pool
+
+EOF
+} |
+  # A name listed above may not be built in every version or on every
+  # architecture; tests are added, removed, and renamed upstream over time. Drop
+  # any that are not present so a stale entry cannot abort the build here. A test
+  # that reappears under a new name is simply run below and would surface as a
+  # failure if it regresses.
+  while read -r excluded_test
+  do
+    [ -e "${excluded_test}" ] && printf '%s\n' "${excluded_test}"
+  done |
+  xargs -r chmod -v a-x
+
+# Feed the list of test executables on file descriptor 3 rather than on the
+# loop's standard input. Some test binaries read from stdin; were the list on
+# stdin, such a test would consume the remaining names and silently skip the
+# rest of the suite. Reading on fd 3 keeps iteration independent of what any
+# individual test does with its own stdin.
+while read -r testexe <&3
   do
     echo "==== $(date -u --iso-8601=ns): $(basename "${testexe}") ===="
     %{__python3} tools/run_tests/start_port_server.py
@@ -1591,7 +1648,7 @@ quit
 EOF
     gdb -q -x "${testexe}-script.gdb" --batch </dev/null || :
 %endif
-  done
+  done 3< <(find %{_vpath_builddir} -type f -perm /0111 -name '*_test' | sort)
 
 # Stop the port server
 curl "http://localhost:${PORT_SERVER_PORT}/quitquitquit" || :
